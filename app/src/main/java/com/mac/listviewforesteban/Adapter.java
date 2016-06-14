@@ -1,43 +1,70 @@
 package com.mac.listviewforesteban;
 
 import android.content.Context;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 
-public class Adapter extends ArrayAdapter<String> {
+import java.util.ArrayList;
+import java.util.List;
+
+public class Adapter extends BaseAdapter {
 
     private final int TEXT_AND_SWITCH = 0;
     private final int TEXT_ONLY = 1;
     private final Context context;
+    private List<SettingOptions> optionsList = new ArrayList<>();
 
-    public Adapter(Context context, int resource) {
-        super(context, resource);
+    public Adapter(Context context, List<SettingOptions> items) {
         this.context = context;
+        optionsList = items;
+    }
+
+    @Override
+    public int getCount() {
+        return optionsList.size();
+    }
+
+    @Override
+    public Object getItem(int i) {
+        return optionsList.get(i);
+    }
+
+    @Override
+    public long getItemId(int i) {
+        return i;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         TextViewHolder holder;
         if (convertView == null) {
-
-            holder = createViewHolderBasedOnPosition(position);
-            convertView = holder.getView();
+            if (getItemViewType(position) == TEXT_ONLY) {
+                LayoutInflater inflater = LayoutInflater.from(context);
+                convertView = inflater.inflate(R.layout.row_text_only, parent, false);
+                holder = new TextViewHolder(convertView);
+            } else {
+                LayoutInflater inflater = LayoutInflater.from(context);
+                convertView = inflater.inflate(R.layout.row_text_switch, parent, false);
+                holder = new SwitchViewHolder(convertView, this);
+            }
             convertView.setTag(holder);
         }
-        holder = (TextViewHolder) convertView.getTag();
-        holder.invalidate(getItem(position));
+
+
+        if (getItemViewType(position) == TEXT_ONLY) {
+            holder = (TextViewHolder) convertView.getTag();
+            holder.invalidate((SettingOptions) getItem(position));
+        } else {
+            holder = (SwitchViewHolder) convertView.getTag();
+            ((SwitchViewHolder) holder).invalidate((SettingSwitchOptions) getItem(position), position);
+        }
+
         return convertView;
     }
 
-    private TextViewHolder createViewHolderBasedOnPosition(int position) {
-
-        if (getItemViewType(position) == TEXT_ONLY) {
-            return new TextViewHolder(context);
-        } else {
-            return new ToggleViewHolder(context);
-        }
-    }
 
     @Override
     public int getViewTypeCount() {
@@ -46,7 +73,7 @@ public class Adapter extends ArrayAdapter<String> {
 
     @Override
     public int getItemViewType(int position) {
-        if (position == 0) {
+        if (getItem(position) instanceof SettingSwitchOptions) {
             return TEXT_AND_SWITCH;
         }
         return TEXT_ONLY;
